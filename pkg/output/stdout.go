@@ -477,6 +477,33 @@ func (s *Stdoutput) resultNormal(res ffuf.Result) {
     fmt.Println(resnormal)
 }
 
+
+// New helper function to output JSON
+func (s *Stdoutput) outputJSON(res ffuf.Result) {
+    output := struct {
+        Url      string `json:"url"`
+        Status   int64  `json:"status"`
+        Size     int64  `json:"size"`
+        Words    int64  `json:"words"`
+        Lines    int64  `json:"lines"`
+        Duration int64  `json:"duration"`
+    }{
+        Url:      res.Url,
+        Status:   res.StatusCode,
+        Size:     res.ContentLength,
+        Words:    res.ContentWords,
+        Lines:    res.ContentLines,
+        Duration: res.Duration.Milliseconds(),
+    }
+
+    resBytes, err := json.Marshal(output)
+    if err != nil {
+        s.Error(err.Error())
+    } else {
+        fmt.Println(string(resBytes))
+    }
+}
+
 func (s *Stdoutput) resultJson(res ffuf.Result) {
 	resBytes, err := json.Marshal(res)
 	if err != nil {

@@ -411,74 +411,24 @@ func (s *Stdoutput) resultQuiet(res ffuf.Result) {
 }
 
 func (s *Stdoutput) resultMultiline(res ffuf.Result) {
-    if s.config.Json {
-        s.outputJSON(res)
-        return
-    }
-
-    if s.config.Verbose {
-        // When verbose, output only the URL and status information
-        fmt.Printf("%s [Status: %d, Size: %d, Words: %d, Lines: %d, Duration: %dms]\n",
-            res.Url,
-            res.StatusCode,
-            res.ContentLength,
-            res.ContentWords,
-            res.ContentLines,
-            res.Duration.Milliseconds())
-        return
-    }
-
-    // Existing code for non-verbose output
-    var res_hdr, res_str string
-    res_str = "%s%s    * %s: %s\n"
-    res_hdr = fmt.Sprintf("%s%s[Status: %d, Size: %d, Words: %d, Lines: %d, Duration: %dms]%s", TERMINAL_CLEAR_LINE, s.colorize(res.StatusCode), res.StatusCode, res.ContentLength, res.ContentWords, res.ContentLines, res.Duration.Milliseconds(), ANSI_CLEAR)
-    reslines := ""
-    if res.ResultFile != "" {
-        reslines = fmt.Sprintf("%s%s| RES | %s\n", reslines, TERMINAL_CLEAR_LINE, res.ResultFile)
-    }
-    for _, k := range s.fuzzkeywords {
-        if ffuf.StrInSlice(k, s.config.CommandKeywords) {
-            reslines = fmt.Sprintf(res_str, reslines, TERMINAL_CLEAR_LINE, k, strconv.Itoa(res.Position))
-        } else {
-            reslines = fmt.Sprintf(res_str, reslines, TERMINAL_CLEAR_LINE, k, res.Input[k])
-        }
-    }
-    if len(res.ScraperData) > 0 {
-        reslines = fmt.Sprintf("%s%s| SCR |\n", reslines, TERMINAL_CLEAR_LINE)
-        for k, vslice := range res.ScraperData {
-            for _, v := range vslice {
-                reslines = fmt.Sprintf(res_str, reslines, TERMINAL_CLEAR_LINE, k, v)
-            }
-        }
-    }
-    fmt.Printf("%s\n%s\n", res_hdr, reslines)
+    s.outputResult(res)
 }
 
 func (s *Stdoutput) resultNormal(res ffuf.Result) {
+    s.outputResult(res)
+}
+
+// New helper function to output the result in the desired format
+func (s *Stdoutput) outputResult(res ffuf.Result) {
     if s.config.Json {
         s.outputJSON(res)
         return
     }
 
-    if s.config.Verbose {
-        // When verbose, output only the URL and status information
-        fmt.Printf("%s [Status: %d, Size: %d, Words: %d, Lines: %d, Duration: %dms]\n",
-            res.Url,
-            res.StatusCode,
-            res.ContentLength,
-            res.ContentWords,
-            res.ContentLines,
-            res.Duration.Milliseconds())
-        return
-    }
-
-    // Existing code for non-verbose output
-    resnormal := fmt.Sprintf("%s%s%-23s [Status: %d, Size: %d, Words: %d, Lines: %d, Duration: %dms]%s", TERMINAL_CLEAR_LINE, s.colorize(res.StatusCode), s.prepareInputsOneLine(res), res.StatusCode, res.ContentLength, res.ContentWords, res.ContentLines, res.Duration.Milliseconds(), ANSI_CLEAR)
-    fmt.Println(resnormal)
+    fmt.Printf("%d %s %d\n", res.ContentLength, res.Url, res.StatusCode)
 }
 
-
-// New helper function to output JSON
+// Keep the JSON output function as is
 func (s *Stdoutput) outputJSON(res ffuf.Result) {
     output := struct {
         Url      string `json:"url"`
@@ -503,7 +453,6 @@ func (s *Stdoutput) outputJSON(res ffuf.Result) {
         fmt.Println(string(resBytes))
     }
 }
-
 func (s *Stdoutput) resultJson(res ffuf.Result) {
 	resBytes, err := json.Marshal(res)
 	if err != nil {
